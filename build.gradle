@@ -1,0 +1,54 @@
+group 'com.chess.network'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        jcenter()
+    }
+    dependencies {
+        classpath 'de.richsource.gradle.plugins:gwt-gradle-plugin:0.6'
+	}
+
+}
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+    
+}
+dependencies {
+    compile "com.esotericsoftware:kryonet:2.+"
+}
+
+sourceSets.main.java.srcDirs = ["src/main/java/"]
+
+task dist(type: Jar) {
+    from files(sourceSets.main.output.classesDir)
+    from files(sourceSets.main.output.resourcesDir)
+    from {configurations.compile.collect {zipTree(it)}}
+    manifest {
+        attributes(
+            'Class-Path': configurations.compile.collect {it.getName() }.join(' '), 'Main-Class': 'com.chess.network.Main'
+        )
+    }
+}
+
+
+allprojects {
+    apply plugin: "idea"
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+    }
+
+}
+sourceCompatibility = 1.5
