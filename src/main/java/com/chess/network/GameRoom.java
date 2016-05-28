@@ -27,7 +27,7 @@ public class GameRoom {
     public ChessNetwork network;
     int currentTurnID;
     boolean multiBoard=false; //Quick hack to get this working again.
-
+    boolean turnshift=true;
 
     public GameRoom(Player p1, Player p2, ChessNetwork network)
     {
@@ -97,6 +97,37 @@ public class GameRoom {
             currentTurnID=blackID;
         else
             currentTurnID=whiteID;
+    }
+    public void tryPromotion(PromotionPacket packet)
+    {
+        System.out.println("Testing: " + packet.pawnx + " " + packet.pawny);
+        if(inBounds(packet.pawnx) && packet.pawny==0)
+        {
+            System.out.println("Promotion is in bounds!");
+            //Black's pawn is on white's back rank
+            if(board.board[packet.pawnx][packet.pawny]==5){
+                System.out.println("Black's pawn is on white's back rank");
+                //allow promotion & change turns
+                //TODO check if the id is valid.
+                board.board[packet.pawnx][packet.pawny]=packet.newID;
+                player1.connection.sendTCP(new PromotionAccept(true, gameID,0,packet.pawnx, packet.pawny,packet.newID));
+                player2.connection.sendTCP(new PromotionAccept(true, gameID,0,packet.pawnx, packet.pawny,packet.newID));
+                switchTurns();
+                turnshift=true;
+            }
+        }
+        else if(inBounds(packet.pawnx) && packet.pawny==7)
+        {
+            //White's pawn on black's back rank.
+            if(board.board[packet.pawnx][packet.pawny]==11){
+                //Allow
+                board.board[packet.pawnx][packet.pawny]=packet.newID;
+                player1.connection.sendTCP(new PromotionAccept(true, gameID,0,packet.pawnx, packet.pawny,packet.newID));
+                player2.connection.sendTCP(new PromotionAccept(true, gameID,0,packet.pawnx, packet.pawny,packet.newID));
+                switchTurns();
+                turnshift=true;
+            }
+        }
     }
 
     public boolean inBounds(int test)
@@ -319,6 +350,16 @@ public class GameRoom {
         }
         return true;
     }
+
+    public boolean promotionCheck(MovePacket m)
+    {
+        if((board.board[m.x1][m.y1]==5 && m.y2==0) ||(board.board[m.x1][m.y1]==11 && m.y2==7)){
+            turnshift=false;
+            network.server.sendToTCP(m.playerID,new PromotionPacket(m.x2,m.y2,0,gameID,0));
+            return true;
+        }
+        return false;
+    }
     public boolean isValid(MovePacket m)
     {
 
@@ -333,6 +374,19 @@ public class GameRoom {
         int yabs = Math.abs(y1-y2);
         if(!inBounds(x2) || !inBounds(y2)) //May as well check this first.
             return false;
+        /* We should probably check if you're trying to move your own fucking piece this time around */
+        if(board.board[m.x1][m.y1]>=0 && board.board[m.x1][m.y1]<=5) //Piece being moved is black
+        {
+            if(m.playerID!=blackID)
+                return false;
+        }
+        else if(board.board[m.x1][m.y1]>=6 && board.board[m.x1][m.y1]<=11) //Piece being moved is white
+        {
+            if(m.playerID!=whiteID)
+                return false;
+        }
+
+
         /* Let's set up move logic for individual pieces before checking threats */
         switch(piece){
             case 0: //Black King
@@ -400,7 +454,10 @@ public class GameRoom {
                         {
                             if(yabs==1 && xabs == 1) //Moving forward diagonally 1. Can't move diagonally by more than 1.
                             { //Should by your standard capture by 1 diagonally.
-                                return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                                if(validCapture(board.board[x1][y1],board.board[x2][y2])) {
+                                    promotionCheck(m); //Just needs to set a flag.
+                                    return true;
+                                }
                             }
                         }
                     }
@@ -411,10 +468,19 @@ public class GameRoom {
                         if(yabs>=1)
                         {
                             if(y1==6 && yabs <=2) {
-                                return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                                if(validCapture(board.board[x1][y1],board.board[x2][y2]))
+                                {
+                                    promotionCheck(m);
+                                    return true;
+                                }
                             }
-                            else if(yabs==1)
-                                return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                            else if(yabs==1) {
+                                if(validCapture(board.board[x1][y1], board.board[x2][y2]))
+                                {
+                                    promotionCheck(m);
+                                    return true;
+                                }
+                            }
                         }
                         else
                             return false;
@@ -487,7 +553,11 @@ public class GameRoom {
                         {
                             if(yabs==1 && xabs == 1) //Moving forward diagonally 1. Can't move diagonally by more than 1.
                             { //Should by your standard capture by 1 diagonally.
-                                return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                                if(validCapture(board.board[x1][y1],board.board[x2][y2]))
+                                {
+                                    promotionCheck(m);
+                                    return true;
+                                }
                             }
                         }
                     }
@@ -498,10 +568,18 @@ public class GameRoom {
                         if(yabs>=1)
                         {
                             if(y1==1 && yabs <=2) {
-                                return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                                if(validCapture(board.board[x1][y1],board.board[x2][y2]))
+                                {
+                                    promotionCheck(m);
+                                    return true;
+                                }
                             }
-                            else if(yabs==1)
-                                return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                            else if(yabs==1) {
+                                if(validCapture(board.board[x1][y1], board.board[x2][y2])){
+                                    promotionCheck(m);
+                                    return true;
+                                }
+                            }
                         }
                         else
                             return false;
@@ -574,7 +652,8 @@ public class GameRoom {
         MovePacket packet = new MovePacket(gameID,board.boardID,m.x1, m.y1, m.x2, m.y2,true);
         player1.connection.sendTCP(packet);
         player2.connection.sendTCP(packet);
-        switchTurns();
+        if(turnshift)
+            switchTurns();
     }
 
     //Only called if one of the players disconnect.

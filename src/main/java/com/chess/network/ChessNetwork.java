@@ -73,6 +73,8 @@ public class ChessNetwork {
         server.getKryo().register(BoardPosition.class);
         server.getKryo().register(GameEndPacket.class);
         server.getKryo().register(ServerShutdownPacket.class);
+        server.getKryo().register(PromotionPacket.class);
+        server.getKryo().register(PromotionAccept.class);
         server.addListener(new MasterListener(this));
 
 

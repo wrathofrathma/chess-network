@@ -30,5 +30,5 @@ public class MovePacket {
     public int x1, y1;
     public int x2, y2;
     public int gameID;
-    public boolean turnswitch;
+    public boolean turnswitch=true; //Wow, I fucking thought ahead.
 }

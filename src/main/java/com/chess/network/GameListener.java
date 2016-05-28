@@ -1,6 +1,7 @@
 package com.chess.network;
 
 import Packets.MovePacket;
+import Packets.PromotionPacket;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 /**
@@ -21,6 +22,15 @@ public class GameListener extends Listener{
         {
             MovePacket move = (MovePacket) object;
             gameRoom.tryMove(move);
+        }
+        else if(object instanceof PromotionPacket)
+        {
+            System.out.println("Received promotion packet o.O");
+            PromotionPacket packet = (PromotionPacket)object;
+            if(this.gameRoom.gameID==packet.gameID)
+            {
+                gameRoom.tryPromotion(packet);
+            }
         }
     }
 
