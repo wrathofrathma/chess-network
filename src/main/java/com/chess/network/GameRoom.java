@@ -3,6 +3,8 @@ package com.chess.network;
 import Packets.*;
 
 import java.util.Random;
+import java.util.Vector;
+
 
 /**
  * Chess Game Room
@@ -100,13 +102,10 @@ public class GameRoom {
     }
     public void tryPromotion(PromotionPacket packet)
     {
-        System.out.println("Testing: " + packet.pawnx + " " + packet.pawny);
         if(inBounds(packet.pawnx) && packet.pawny==0)
         {
-            System.out.println("Promotion is in bounds!");
             //Black's pawn is on white's back rank
             if(board.board[packet.pawnx][packet.pawny]==5){
-                System.out.println("Black's pawn is on white's back rank");
                 //allow promotion & change turns
                 //TODO check if the id is valid.
                 board.board[packet.pawnx][packet.pawny]=packet.newID;
@@ -158,7 +157,7 @@ public class GameRoom {
             }
         return true;
     }
-    public boolean isLateralXValid(int x1, int x2, int y)
+    public boolean isLateralXValid(int x1, int x2, int y,int[][] position)
     {
         /* Detect if any pieces are along the row.
          * 1. Grab all values between x1 -> x2
@@ -170,7 +169,7 @@ public class GameRoom {
         {
             for(int i=++x2; i<x1;i++) // We only need to account for up UNTIL the landing square.
             {
-                if(board.board[i][y]!=12)
+                if(position[i][y]!=12)
                 {
                     return false;
                 }
@@ -180,7 +179,7 @@ public class GameRoom {
         {
             for(int i=++x1; i<x2;i++) // We only need to account for up UNTIL the landing square.
             {
-                if(board.board[i][y]!=12)
+                if(position[i][y]!=12)
                 {
                     return false;
                 }
@@ -188,7 +187,7 @@ public class GameRoom {
         }
         return true;
     }
-    public boolean isLateralYValid(int y1, int y2, int x)
+    public boolean isLateralYValid(int y1, int y2, int x,int[][] position)
     {
         if(y1==y2)
             return true;
@@ -196,7 +195,7 @@ public class GameRoom {
         {
             for(int i=++y2; i<y1;i++) // We only need to account for up UNTIL the landing square.
             {
-                if(board.board[x][i]!=12)
+                if(position[x][i]!=12)
                 {
                     return false;
                 }
@@ -206,7 +205,7 @@ public class GameRoom {
         {
             for(int i=++y1; i<y2;i++) // We only need to account for up UNTIL the landing square.
             {
-                if(board.board[x][i]!=12)
+                if(position[x][i]!=12)
                 {
                     return false;
                 }
@@ -214,7 +213,7 @@ public class GameRoom {
         }
         return true;
     }
-    public boolean isDiagonalValid(int x1, int y1, int x2, int y2)
+    public boolean isDiagonalValid(int x1, int y1, int x2, int y2, int[][] position)
     {
         /* We are going to do some testing here. We initially ghetto rigged this movement system, but there is actually a mathematical solution we need to learn */
         /* This is relevant so that we don't calculate the X & Y separately - If we make this work, we can do them simultaneously and much easier.
@@ -258,39 +257,7 @@ public class GameRoom {
             return false;
         else if(Math.abs(x1-x2)!=Math.abs(y1-y2)) //The absolute value of hte move should be the same if they move 1:1
             return false;
-/*
-        int newx=0;
-        int newy=0;
-        System.out.println("Moving from: (" + x1 + "," + y1+") to (" + x2 + ","+y2+")");
-        if(x1>x2) {
-            for (int i = 1; i <(x1-x2);i++)
-            {
 
-                newx = (int) (x1 + (x2-x1)*(1.0/(x2-x1))*i);
-                newy = (int)(y1 + (y2-y1)*(1.0/(y2-y1))*i);
-                System.out.println("Moving from: (" + x1 + "," + y1+") to (" + x2 + ","+y2+"). Checking ("+newx + "," + newy+")");
-
-                if(board.board[newx][newy]!=12) {
-                    System.out.println("Collision on : " +newx + " "+ newy);
-                    return false;
-                }
-                System.out.println("Moving from: (" + x1 + "," + y1+") to (" + x2 + ","+y2+"). Checking ("+newx + "," + newy+")");
-            }
-        }
-        else {
-            for (int i = 1; i <(x2-x1);i++)
-            {
-                newx = (int) (x1 + (x2-x1)*(1.0/(x2-x1))*i);
-                newy = (int)(y1 + (y2-y1)*(1.0/(y2-y1))*i);
-                System.out.println("Moving from: (" + x1 + "," + y1+") to (" + x2 + ","+y2+"). Checking ("+newx + "," + newy+")");
-
-                if(board.board[newx][newy]!=12) {
-                    System.out.println("Collision on : " +newx + " "+ newy);
-
-                    return false;
-                }
-            }
-        }*/
         if(x1>x2)
         {
             if(y1>y2)
@@ -301,7 +268,7 @@ public class GameRoom {
                 {
                     if(++j>=y1)
                         break;
-                    if(board.board[i][j]!=12)
+                    if(position[i][j]!=12)
                         return false;
                 }
             }
@@ -313,7 +280,7 @@ public class GameRoom {
                 {
                     if(--j<=y1)
                         break;
-                    if(board.board[i][j]!=12) {
+                    if(position[i][j]!=12) {
                         return false;
                     }
                 }
@@ -330,7 +297,7 @@ public class GameRoom {
                 {
                     if(++j>=y1)
                         break;
-                    if(board.board[i][j]!=12) {
+                    if(position[i][j]!=12) {
                             return false;
                     }
                 }
@@ -342,7 +309,7 @@ public class GameRoom {
                 {
                     if(++j>=y2)
                         break;
-                    if(board.board[i][j]!=12)
+                    if(position[i][j]!=12)
                         return false;
                 }
             }
@@ -350,7 +317,7 @@ public class GameRoom {
         }
         return true;
     }
-
+    //TODO do we want to pass this guy an array of integers to check, or should we always check the main board?
     public boolean promotionCheck(MovePacket m)
     {
         if((board.board[m.x1][m.y1]==5 && m.y2==0) ||(board.board[m.x1][m.y1]==11 && m.y2==7)){
@@ -360,12 +327,11 @@ public class GameRoom {
         }
         return false;
     }
-    public boolean isValid(MovePacket m)
+    public boolean isValid(MovePacket m, int[][] position)
     {
 
-        //TODO OH GOD. The dreaded logic segment.
         /* Use x1 y1 to grab current piece. Figure out all valid moves then check against the suggested move */
-        int piece = board.board[m.x1][m.y1]; //Piece trying to be moved.
+        int piece = position[m.x1][m.y1]; //Piece trying to be moved.
         int x1 = m.x1;
         int x2 = m.x2;
         int y1 = m.y1;
@@ -375,12 +341,12 @@ public class GameRoom {
         if(!inBounds(x2) || !inBounds(y2)) //May as well check this first.
             return false;
         /* We should probably check if you're trying to move your own fucking piece this time around */
-        if(board.board[m.x1][m.y1]>=0 && board.board[m.x1][m.y1]<=5) //Piece being moved is black
+        if(position[m.x1][m.y1]>=0 && position[m.x1][m.y1]<=5) //Piece being moved is black
         {
             if(m.playerID!=blackID)
                 return false;
         }
-        else if(board.board[m.x1][m.y1]>=6 && board.board[m.x1][m.y1]<=11) //Piece being moved is white
+        else if(position[m.x1][m.y1]>=6 && position[m.x1][m.y1]<=11) //Piece being moved is white
         {
             if(m.playerID!=whiteID)
                 return false;
@@ -390,36 +356,41 @@ public class GameRoom {
         /* Let's set up move logic for individual pieces before checking threats */
         switch(piece){
             case 0: //Black King
-                /* Can move 1 square in any direction - Check for bounds */
-                if(xabs<=1 && xabs >= 0 && yabs >=0 && yabs<=1)
+                for(MovePacket movePacket : getKingMoves(m.x1,m.y1,position))
                 {
-                    //If absolute value is 1, then he's only moved one space. Now we must check the bounds, then the threats.
-                    return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                    if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                            movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                            movePacket.playerID == m.playerID)
+                    {
+                        if(validCapture(position[x1][y1],position[x2][y2]))
+                            return true;
+                    }
                 }
                 break;
             case 1: //Black Queen
-                /* First we'll just test what KIND of movement it is */
-                if(xabs==0 || yabs==0) //A lateral movement
+                for(MovePacket movePacket : getQueenMoves(m.x1,m.y1,position))
                 {
-                    if(isLateralXValid(x1,x2,y1) && isLateralYValid(y1,y2,x1))
+                    if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                            movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                            movePacket.playerID == m.playerID)
                     {
-                        return validCapture(board.board[x1][y1],board.board[x2][y2]);
-                    }
-                }
-                else //Really only diagonal possible.
-                {
-                    if(isDiagonalValid(x1,y1,x2,y2))
-                    {
-                        return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                        if(validCapture(position[x1][y1],position[x2][y2]))
+                            return true;
                     }
                 }
                 break;
             case 2: //Black Rook
                 if((xabs!=0) && (yabs!=0))
                     return false;
-                if(isLateralXValid(x1,x2,y1) && isLateralYValid(y1,y2,x1))
+                for(MovePacket movePacket : getRookMoves(m.x1,m.y1,position))
                 {
-                    return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                    if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                            movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                            movePacket.playerID == m.playerID)
+                    {
+                        if(validCapture(position[x1][y1],position[x2][y2]))
+                            return true;
+                    }
                 }
                 break;
             case 3: //Black Knight
@@ -429,33 +400,39 @@ public class GameRoom {
                 //Knight movement is restricted to 2x1
                 if((xabs==1 && yabs ==2) || (xabs==2 && yabs==1))
                 {
-                    return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                    if(validCapture(position[x1][y1],position[x2][y2])){
+                        return true;
+                    }
                 }
                 return false;
             case 4: //Black Bishop
-                if(isDiagonalValid(x1,y1,x2,y2))
+                for(MovePacket movePacket : getBishopMoves(m.x1,m.y1,position))
                 {
-                    return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                    if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                            movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                            movePacket.playerID == m.playerID)
+                    {
+                        if(validCapture(position[x1][y1],position[x2][y2]))
+                            return true;
+                    }
                 }
                 break;
             case 5: //Black Pawn
                 if(y1-y2>0) //Pawns can't move laterally, so it should never need >=
                 {
-                    if(board.board[x2][y2]!=12)
+                    if(position[x2][y2]!=12)
                     {
                         //Check for diagonal
                         if(xabs==0)
                         {
                             //Not diagonal so we can't move forward.
-                            System.out.println("There is something in your path!");
                             return false;
                         }
                         else
                         {
                             if(yabs==1 && xabs == 1) //Moving forward diagonally 1. Can't move diagonally by more than 1.
                             { //Should by your standard capture by 1 diagonally.
-                                if(validCapture(board.board[x1][y1],board.board[x2][y2])) {
-                                    promotionCheck(m); //Just needs to set a flag.
+                                if(validCapture(position[x1][y1],position[x2][y2])) {
                                     return true;
                                 }
                             }
@@ -468,17 +445,15 @@ public class GameRoom {
                         if(yabs>=1)
                         {
                             if(y1==6 && yabs <=2) {
-                                if(validCapture(board.board[x1][y1],board.board[x2][y2]))
+                                if(validCapture(position[x1][y1],position[x2][y2]))
                                 {
-                                    promotionCheck(m);
-                                    return true;
+                                        return true;
                                 }
                             }
                             else if(yabs==1) {
-                                if(validCapture(board.board[x1][y1], board.board[x2][y2]))
+                                if(validCapture(position[x1][y1], position[x2][y2]))
                                 {
-                                    promotionCheck(m);
-                                    return true;
+                                        return true;
                                 }
                             }
                         }
@@ -488,35 +463,44 @@ public class GameRoom {
                 }
                 break;
             case 6: //White King
-                if(xabs<=1 && xabs >= 0 && yabs >=0 && yabs<=1)
+                for(MovePacket movePacket : getKingMoves(m.x1,m.y1,position))
                 {
-                    return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                    if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                            movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                            movePacket.playerID == m.playerID)
+                    {
+                        if(validCapture(position[x1][y1],position[x2][y2]))
+                            return true;
+                    }
                 }
                 break;
             case 7: //White Queen
                 /* First we'll just test what KIND of movement it is */
-                if(xabs==0 || yabs==0) //A lateral movement
+                for(MovePacket movePacket : getQueenMoves(m.x1,m.y1,position))
                 {
-                    if(isLateralXValid(x1,x2,y1) && isLateralYValid(y1,y2,x1))
+
+                    if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                            movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                            movePacket.playerID == m.playerID)
                     {
-                        return validCapture(board.board[x1][y1],board.board[x2][y2]);
-                    }
-                }
-                else //Really only diagonal possible.
-                {
-                    if(isDiagonalValid(x1,y1,x2,y2))
-                    {
-                        return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                        if(validCapture(position[x1][y1],position[x2][y2]))
+                            return true;
                     }
                 }
                 break;
             case 8: //White Rook
-                //We need to check if he is ONLY moving along one file.
+                //This will increase the efficiency if we do little checks like this.
                 if((xabs!=0) && (yabs!=0)) //If it hasn't moved along the file the absolute value will be 0. Both being !=0 means it's moving along both axis.
                     return false;
-                if(isLateralXValid(x1,x2,y1) && isLateralYValid(y1,y2,x1))
+                for(MovePacket movePacket : getRookMoves(m.x1,m.y1,position))
                 {
-                    return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                    if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                            movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                            movePacket.playerID == m.playerID)
+                    {
+                        if(validCapture(position[x1][y1],position[x2][y2]))
+                            return true;
+                    }
                 }
                 break;
             case 9: //White Knight
@@ -526,13 +510,19 @@ public class GameRoom {
                 //Knight movement is restricted to 2x1
                 if((xabs==1 && yabs ==2) || (xabs==2 && yabs==1))
                 {
-                    return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                    return validCapture(position[x1][y1],position[x2][y2]);
                 }
                 return false;
             case 10: //White Bishop
-                if(isDiagonalValid(x1,y1,x2,y2))
+                for(MovePacket movePacket : getBishopMoves(m.x1,m.y1,position))
                 {
-                    return validCapture(board.board[x1][y1],board.board[x2][y2]);
+                    if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                            movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                            movePacket.playerID == m.playerID)
+                    {
+                        if(validCapture(position[x1][y1],position[x2][y2]))
+                            return true;
+                    }
                 }
                 break;
             case 11: //White pawn - RANK 1
@@ -540,22 +530,20 @@ public class GameRoom {
                 {
                     //Check if there is a piece on x2 y2
                     //If there is check if it is a diagonal capture, if not then return false
-                    if(board.board[x2][y2]!=12)
+                    if(position[x2][y2]!=12)
                     {
                         //Check for diagonal
                         if(xabs==0)
                         {
                             //Not diagonal so we can't move forward.
-                            System.out.println("There is something in your path!");
                             return false;
                         }
                         else
                         {
                             if(yabs==1 && xabs == 1) //Moving forward diagonally 1. Can't move diagonally by more than 1.
                             { //Should by your standard capture by 1 diagonally.
-                                if(validCapture(board.board[x1][y1],board.board[x2][y2]))
+                                if(validCapture(position[x1][y1],position[x2][y2]))
                                 {
-                                    promotionCheck(m);
                                     return true;
                                 }
                             }
@@ -568,15 +556,13 @@ public class GameRoom {
                         if(yabs>=1)
                         {
                             if(y1==1 && yabs <=2) {
-                                if(validCapture(board.board[x1][y1],board.board[x2][y2]))
+                                if(validCapture(position[x1][y1],position[x2][y2]))
                                 {
-                                    promotionCheck(m);
                                     return true;
                                 }
                             }
                             else if(yabs==1) {
-                                if(validCapture(board.board[x1][y1], board.board[x2][y2])){
-                                    promotionCheck(m);
+                                if(validCapture(position[x1][y1], position[x2][y2])){
                                     return true;
                                 }
                             }
@@ -591,33 +577,713 @@ public class GameRoom {
         return false;
     }
 
-    /* Call after a move, to see if the move put a player in check. Probably can use a player.state for tracking it? */
-    public boolean inCheck(int userID)
-    {
-        /* Get player colour
-         * Grab King position
-         * check if any opposing coloured pieces have any valid moves onto the king....This could get inefficient fast.
-         *
-         *
-         * */
 
-        return evaluateCheck(board.board);
+    /* Give me a move packet and I'll let you know how fucked you are =) */
+    public boolean evaluateCheck(MovePacket movePacket, int userID, int[][] currentPosition)
+    {
+        /* Let's grab some fun stuff, like the move for example! */
+        int[][] copyboard = new int[8][8]; //Our copy that we can use to check shit.
+        for(int i=0; i<8; i++)
+        {
+            for(int j=0; j<8; j++)
+            {
+                copyboard[i][j]=currentPosition[i][j];
+            }
+        }
+
+        //Now we alter our little baby board
+        copyboard[movePacket.x2][movePacket.y2]=copyboard[movePacket.x1][movePacket.y1];
+        copyboard[movePacket.x1][movePacket.y1] = 12;
+
+        System.out.println(board.board[movePacket.x2][movePacket.y2]);
+        System.out.println(copyboard[movePacket.x2][movePacket.y2]);
+
+        /* This should actually be pretty easy since we already have a method for checking if a move is valid
+         * We can just go through each of the other colour's pieces and see if the move from point A to the Kinng is valid
+          * GG EZ
+          * */
+        if(userID==whiteID)
+        {
+            /* White king ID == 6
+            * Black king 0
+            * black queen 1
+            * black rook 2
+            * black knight 3
+            * black bishop 4
+            * black pawn 5
+            * */
+            /* Our king's coordinates */
+            int kx=0;
+            int ky=0;
+            for(int i=0; i<8; i++)
+            {
+                for(int j=0; j<8; j++){
+                    if(copyboard[i][j]==6){
+                        kx=i;
+                        ky=j;
+                    }
+                }
+            }
+            for(int i=0; i<8; i++)
+            {
+                for(int j=0; j<8; j++) {
+                    //I love doing this the easy way.
+                    switch (copyboard[i][j]) {
+                        case 0:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                        case 1:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                        case 2:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                        case 3:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                        case 4:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                        case 5:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                    }
+                }
+            }
+
+        }
+        else if(userID==blackID)
+        {
+            /* Black king ID==0
+            * White king 6
+            * White Queen 7
+            * White Rook 8
+            * White knight 9
+            * White bishop 10
+            * white pawn 11
+            * */
+            int kx=0;
+            int ky=0;
+            for(int i=0; i<8; i++)
+            {
+                for(int j=0; j<8; j++){
+                    if(copyboard[i][j]==0){
+                        kx=i;
+                        ky=j;
+                    }
+                }
+            }
+
+            for(int i=0; i<8; i++)
+            {
+                for(int j=0; j<8; j++) {
+                    switch (copyboard[i][j]) {
+                        case 6:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                        case 7:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                        case 8:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                        case 9:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                        case 10:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                        case 11:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),copyboard)) {
+                                return true;
+                            }
+                            break;
+                    }
+                }
+            }
+
+        }
+        return false;
     }
-
-    public boolean evaluateCheck(int[][] b)
+    /* Same as above, but we'll just check the userid to the array passed, instead of a copy */
+    public boolean evaluateCheck(int userID, int[][] currentPosition)
     {
-        //This is where we will do the heavy lifting of this. Both inCheck and checkAfterMove should call with an array.
+
+        if(userID==whiteID)
+        {
+            /* White king ID == 6
+            * Black king 0
+            * black queen 1
+            * black rook 2
+            * black knight 3
+            * black bishop 4
+            * black pawn 5
+            * */
+            /* Our king's coordinates */
+            int kx=0;
+            int ky=0;
+            for(int i=0; i<8; i++)
+            {
+                for(int j=0; j<8; j++){
+                    if(currentPosition[i][j]==6){
+                        kx=i;
+                        ky=j;
+                    }
+                }
+            }
+            for(int i=0; i<8; i++)
+            {
+                for(int j=0; j<8; j++) {
+                    //I love doing this the easy way.
+                    switch (currentPosition[i][j]) {
+                        case 0:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                        case 1:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                        case 2:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                        case 3:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                        case 4:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                        case 5:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,blackID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+        else if(userID==blackID)
+        {
+            /* Black king ID==0
+            * White king 6
+            * White Queen 7
+            * White Rook 8
+            * White knight 9
+            * White bishop 10
+            * white pawn 11
+            * */
+            int kx=0;
+            int ky=0;
+            for(int i=0; i<8; i++)
+            {
+                for(int j=0; j<8; j++){
+                    if(currentPosition[i][j]==0){
+                        kx=i;
+                        ky=j;
+                    }
+                }
+            }
+
+            for(int i=0; i<8; i++)
+            {
+                for(int j=0; j<8; j++) {
+                    switch (currentPosition[i][j]) {
+                        case 6:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                        case 7:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                        case 8:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                        case 9:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                        case 10:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                        case 11:
+                            if(isValid(new MovePacket(gameID,i,j,kx,ky,whiteID),currentPosition)) {
+                                return true;
+                            }
+                            break;
+                    }
+                }
+            }
+
+        }
         return false;
     }
 
-    /* We'll call you before a move, checking for pins & blocking checks, breaking checks. */
-    public boolean checkAfterMove(int userid, int x1, int x2, int y1, int y2)
+    /* Restricted to getting king moves specifically */
+    public Vector<MovePacket> getKingMoves(int x, int y, int[][] position)
     {
-        /* We'll create a "fake" array, but do it in a ghetto way so we don't constantly reinitialise the array
-         * Then make the move and see if player is in check?
-         */
+        Vector<MovePacket> validMoves = new Vector<MovePacket>();
+        /* Let's grab our colour real quick to send in our MovePacket */
+        int pid=0;
+        if(position[x][y]==0) //Black
+        {
+            pid=blackID;
+        }
+        else if(position[x][y]==6) //white
+        {
+            pid=whiteID;
+        }
+        else //What?
+            return null;
+
+        /* Let's also make sure x & y are in bounds */
+        if(!inBounds(x) || !inBounds(y))
+            return null;
 
 
+        /* At max kings can have up to 8 moves plus 2 additional castling moves
+         * They can move anywhere from x-1,y-1 to x+1,y+1.
+         * Unless they haven't moved then they can still castle.
+         * We'll just keep two flags for castling later.
+         *
+         * */
+        //Add all valid moves for non-castling moves.
+        for(int i=x-1; i<=x+1; i++)
+        {
+            if(inBounds(i)) {
+                for (int j = y - 1; j <= y + 1; j++) {
+                    if (inBounds(j))
+                    {
+                        //Move is in bounds for both directions & is a valid capture.
+                        if(validCapture(position[x][y],position[i][j]))
+                            validMoves.add(new MovePacket(gameID,x,y,i,j,pid));
+                    }
+                }
+            }
+        }
+        //TODO add castling moves.
+
+        return validMoves;
+    }
+    public Vector<MovePacket> getQueenMoves(int x, int y, int[][] position)
+    {
+        Vector<MovePacket> validMoves = new Vector<MovePacket>();
+        /* Let's grab our colour real quick to send in our MovePacket */
+        int pid=0;
+        if(position[x][y]==1) //Black
+        {
+            pid=blackID;
+        }
+        else if(position[x][y]==7) //white
+        {
+            pid=whiteID;
+        }
+        else //What?
+            return null;
+
+        /* Let's also make sure x & y are in bounds */
+        if(!inBounds(x) || !inBounds(y))
+            return null;
+        /* Queens can move laterally and diagonally
+         * They can move at most 7 squares.
+         * Their xabs & yabs must be equal or one must be 0.
+         * We'll just calculate them separately.
+         * */
+
+        /* Adding valid Ylateral movements to our list */
+        for(int i=0; i<8;i++)
+        {
+            if(isLateralYValid(y,i,x,position))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,x,i,pid));
+            }
+        }
+        /* Adding valid XLateral movements */
+        for(int i=0; i<8; i++)
+        {
+            if(isLateralXValid(x,i,y,position)){
+                validMoves.add(new MovePacket(gameID,x,y,i,y,pid));
+            }
+        }
+
+        /* Adding diagonal movements */
+        int j=y;
+        int i=x;
+        while(i<8)
+        {
+            i++;
+            /* We have run into a wall sir */
+            j++;
+            if(j>=8 || i>=8)
+                break;
+            if(isDiagonalValid(x,y,i,j,position))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,i,j,pid));
+            }
+        }
+
+        /* Adding all up-left moves */
+        /* x1 & y2 will be bigger - Need to loop until we hit x=0 or y=7 */
+        j=y;
+        i=x;
+        while(i>=0)
+        {
+            i--;
+            j++;
+            if(j>=8 || i<0)
+                break;
+            if(isDiagonalValid(x,y,i,j,position)) {
+                validMoves.add(new MovePacket(gameID, x, y, i, j, pid));
+            }
+        }
+
+        /* Adding all down-right moves */
+        /* x2 & y1 will be bigger - Need to loop until y=0 or x=7 */
+        j=y;
+        i=x;
+        while(i<8)
+        {
+            i++;
+            j--;
+            if(j<0 || i>=8)
+                break;
+            if(isDiagonalValid(x,y,i,j,position)) {
+                validMoves.add(new MovePacket(gameID, x, y, i, j, pid));
+            }
+        }
+
+        /* Adding all down-left moves */
+        /* x1 & y1 will be larger - Loop until we hit x=0 or y=0 */
+        j=y;
+        i=x;
+        while(i>=0)
+        {
+            i--;
+            j--;
+            if(j<0 || i<0)
+                break;
+            if(isDiagonalValid(x,y,i,j,position)) {
+
+                validMoves.add(new MovePacket(gameID, x, y, i, j, pid));
+            }
+        }
+
+
+        return validMoves;
+    }
+
+    /* Rook movements complete */
+    public Vector<MovePacket> getRookMoves(int x, int y, int[][] position)
+    {
+        Vector<MovePacket> validMoves = new Vector<MovePacket>();
+        /* Let's grab our colour real quick to send in our MovePacket */
+        int pid=0;
+        if(position[x][y]==2) //Black
+        {
+            pid=blackID;
+        }
+        else if(position[x][y]==8) //white
+        {
+            pid=whiteID;
+        }
+        else //What?
+            return null;
+
+        /* Let's also make sure x & y are in bounds */
+        if(!inBounds(x) || !inBounds(y))
+            return null;
+
+        /* Adding valid Ylateral movements to our list */
+        for(int i=0; i<8;i++)
+        {
+            if(isLateralYValid(y,i,x,position))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,x,i,pid));
+            }
+        }
+        /* Adding valid XLateral movements */
+        for(int i=0; i<8; i++)
+        {
+            if(isLateralXValid(x,i,y,position)){
+                validMoves.add(new MovePacket(gameID,x,y,i,y,pid));
+            }
+        }
+
+        return validMoves;
+    }
+    public Vector<MovePacket> getKnightMoves(int x, int y, int[][] position)
+    {
+        Vector<MovePacket> validMoves = new Vector<MovePacket>();
+        /* Let's grab our colour real quick to send in our MovePacket */
+        int pid=0;
+        if(position[x][y]==3) //Black
+        {
+            pid=blackID;
+        }
+        else if(position[x][y]==9) //white
+        {
+            pid=whiteID;
+        }
+        else //What?
+            return null;
+
+        /* Let's also make sure x & y are in bounds */
+        if(!inBounds(x) || !inBounds(y))
+            return null;
+        return validMoves;
+    }
+    public Vector<MovePacket> getBishopMoves(int x, int y, int[][] position)
+    {
+        Vector<MovePacket> validMoves = new Vector<MovePacket>();
+        /* Let's grab our colour real quick to send in our MovePacket */
+        int pid=0;
+        if(position[x][y]==4) //Black
+        {
+            pid=blackID;
+        }
+        else if(position[x][y]==10) //white
+        {
+            pid=whiteID;
+        }
+        else //What?
+            return null;
+
+        /* Let's also make sure x & y are in bounds */
+        if(!inBounds(x) || !inBounds(y))
+            return null;
+
+        /* Adding all up-right moves */
+        int j=y;
+        int i=x;
+        while(i<8)
+        {
+            i++;
+            /* We have run into a wall sir */
+            j++;
+            if(j>=8 || i>=8)
+                break;
+            if(isDiagonalValid(x,y,i,j,position))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,i,j,pid));
+            }
+        }
+
+        /* Adding all up-left moves */
+        /* x1 & y2 will be bigger - Need to loop until we hit x=0 or y=7 */
+        j=y;
+        i=x;
+        while(i>=0)
+        {
+            i--;
+            j++;
+            if(j>=8 || i<0)
+                break;
+            if(isDiagonalValid(x,y,i,j,position)) {
+                validMoves.add(new MovePacket(gameID, x, y, i, j, pid));
+            }
+        }
+
+        /* Adding all down-right moves */
+        /* x2 & y1 will be bigger - Need to loop until y=0 or x=7 */
+        j=y;
+        i=x;
+        while(i<8)
+        {
+            i++;
+            j--;
+            if(j<0 || i>=8)
+                break;
+            if(isDiagonalValid(x,y,i,j,position)) {
+                validMoves.add(new MovePacket(gameID, x, y, i, j, pid));
+            }
+        }
+
+        /* Adding all down-left moves */
+        /* x1 & y1 will be larger - Loop until we hit x=0 or y=0 */
+        j=y;
+        i=x;
+        while(i>=0)
+        {
+            i--;
+            j--;
+            if(j<0 || i<0)
+                break;
+            if(isDiagonalValid(x,y,i,j,position)) {
+
+                validMoves.add(new MovePacket(gameID, x, y, i, j, pid));
+            }
+        }
+
+        return validMoves;
+    }
+    public Vector<MovePacket> getPawnMoves(int x, int y, int[][] position)
+    {
+        Vector<MovePacket> validMoves = new Vector<MovePacket>();
+        /* Let's grab our colour real quick to send in our MovePacket */
+        int pid=0;
+        if(position[x][y]==5) //Black
+        {
+            pid=blackID;
+        }
+        else if(position[x][y]==11) //white
+        {
+            pid=whiteID;
+        }
+        else //What?
+            return null;
+
+        /* Let's also make sure x & y are in bounds */
+        if(!inBounds(x) || !inBounds(y))
+            return null;
+        /* This is the only one where our colour matters for which direction we can travel */
+        return validMoves;
+    }
+
+    /* For the given piece in the position, evaluate every valid move */
+    public Vector<MovePacket> getMoves(int x, int y, int[][] position)
+    {
+        /* Check if it's within bounds real quick; */
+        if(!(x<=7 && x>=0 && y>=0 && y<=7))
+            return null;
+        switch(position[x][y]){
+            case 0: //Black king
+                return getKingMoves(x,y,position);
+            case 1: //Black queen
+                break;
+            case 2: //Black rook
+                break;
+            case 3: //Black knight
+                break;
+            case 4: //Black bishop
+                break;
+            case 5: //Black pawn
+                break;
+            case 6: //White king
+                return getKingMoves(x,y,position);
+            case 7: //White queen
+                break;
+            case 8: //White rook
+                break;
+            case 9: //white knight
+                break;
+            case 10: //White bishop
+                break;
+            case 11: //White pawn
+                break;
+            case 12: //It's a fucking blank space. It has no moves.
+                break;
+        }
+        return null;
+    }
+
+
+    public boolean isCheckmate(int playerID, int[][] position)
+    {
+        /* This is annoying to make efficient...
+        * Do we have to check every single move from the player? To see if it gets them out of check? How the fuck do we do that.
+        * - - I guess we can create a function to return valid moves? An array of move packets?
+        *
+        *
+        * */
+
+        //Let's grab the player colour
+        if(playerID==whiteID)
+        {
+            //Checking for the other colour's IDs.
+            /* White king ID == 6
+             * Black king 0
+             * black queen 1
+             * black rook 2
+             * black knight 3
+             * black bishop 4
+             * black pawn 5
+             * */
+
+            for(int i=0; i<8; i++)
+            {
+                for(int j=0; j<8; j++)
+                {
+                    // For each of the player's pieces, we need to evaluate if any of them can make a valid move to get out of check.
+                    switch (position[i][j])
+                    {
+                        case 0:
+                            break;
+                        case 1:
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                        case 4:
+                            break;
+                        case 5:
+                            break;
+                    }
+                }
+            }
+
+        }
+        else if(playerID==blackID)
+        {
+
+
+        }
+        return false;
+    }
+
+    /* We'll use this later to check if both players have enough material to go on - We can only continue if ONE player has enough to checkmate
+     *
+      * We can do this if we assign each piece a value
+      * King 0 - Everything
+      * Queen - 9
+      * Rook - 5
+      * Knight & Bishop - 3
+      * Pawn - 1
+      *
+      * As long as a player has a pawn, they can continue, but if they have 0 pawns & less than 5 points of material, they can't checkmate.
+      * We'll just loop through and keep a count of the numbers of each piece available.
+      *
+      *
+      * */
+    public boolean materialCheck(int playerID, int[][] position)
+    {
 
         return false;
     }
@@ -625,19 +1291,26 @@ public class GameRoom {
 
     public void tryMove(MovePacket m)
     {
-        /*
-         * If move isValid(m) returns true then
-         *      * updateBoard()
-         *      * Change turn.
-         * Else do nothing.
-         */
-        //TODO check if it's your move && check if it's a valid move.
-        //Check turn order clientside. This will allow us to set up things like bughouse chess in the future.
+
         //How about we check the fucking game id....that's a good start @.o
         if(m.gameID==gameID) {
             if (currentTurnID == m.playerID)
-                if (isValid(m)) {
-                    updateBoard(m);
+                if (isValid(m,board.board)) {
+                    if(!evaluateCheck(m,currentTurnID,board.board)) {
+                        promotionCheck(m);
+                        updateBoard(m);
+
+                        //TODO I think this is a good place to evaluate if the other player is now in check, if they are we can code for checkmate....not sure how yet.
+                        /* Because updateBoard switches turn ID, we can just use it again */
+                        /*/if(evaluateCheck(m,currentTurnID,board.board))
+                        {
+                            if(isCheckmate(currentTurnID,board.board))
+                            {
+                                //TODO send out a GameEnd packet with checkmate as the reason.
+
+                            }
+                        }*/
+                    }
                 }
         }
     }
