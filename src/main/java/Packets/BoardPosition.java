@@ -68,10 +68,10 @@ public class BoardPosition {
                         case 2: //Black Bishop
                             this.board[i][j] = 4;
                             break;
-                        case 3: //Black King
+                        case 4: //Black King
                             this.board[i][j] = 0;
                             break;
-                        case 4: //Black Queen
+                        case 3: //Black Queen
                             this.board[i][j] = 1;
                             break;
                         case 5:  //Black Bishop

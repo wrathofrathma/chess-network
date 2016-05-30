@@ -2,6 +2,7 @@ package com.chess.network;
 
 import Packets.*;
 
+import java.util.Queue;
 import java.util.Random;
 import java.util.Vector;
 
@@ -112,6 +113,7 @@ public class GameRoom {
                 player1.connection.sendTCP(new PromotionAccept(true, gameID,0,packet.pawnx, packet.pawny,packet.newID));
                 player2.connection.sendTCP(new PromotionAccept(true, gameID,0,packet.pawnx, packet.pawny,packet.newID));
                 switchTurns();
+                postMove(currentTurnID);
                 turnshift=true;
             }
         }
@@ -124,6 +126,8 @@ public class GameRoom {
                 player1.connection.sendTCP(new PromotionAccept(true, gameID,0,packet.pawnx, packet.pawny,packet.newID));
                 player2.connection.sendTCP(new PromotionAccept(true, gameID,0,packet.pawnx, packet.pawny,packet.newID));
                 switchTurns();
+                postMove(currentTurnID);
+
                 turnshift=true;
             }
         }
@@ -132,7 +136,6 @@ public class GameRoom {
     public boolean inBounds(int test)
     {
         if(test<0 || test >7) {
-            System.out.println("Invalid move received: Out of bounds");
             return false;
         }
         return true;
@@ -400,8 +403,15 @@ public class GameRoom {
                 //Knight movement is restricted to 2x1
                 if((xabs==1 && yabs ==2) || (xabs==2 && yabs==1))
                 {
-                    if(validCapture(position[x1][y1],position[x2][y2])){
-                        return true;
+                    for(MovePacket movePacket : getKnightMoves(m.x1,m.y1,position))
+                    {
+                        if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                                movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                                movePacket.playerID == m.playerID)
+                        {
+                            if(validCapture(position[x1][y1],position[x2][y2]))
+                                return true;
+                        }
                     }
                 }
                 return false;
@@ -420,45 +430,15 @@ public class GameRoom {
             case 5: //Black Pawn
                 if(y1-y2>0) //Pawns can't move laterally, so it should never need >=
                 {
-                    if(position[x2][y2]!=12)
+                    for(MovePacket movePacket : getPawnMoves(m.x1,m.y1,position))
                     {
-                        //Check for diagonal
-                        if(xabs==0)
+                        if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                                movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                                movePacket.playerID == m.playerID)
                         {
-                            //Not diagonal so we can't move forward.
-                            return false;
+                            if(validCapture(position[x1][y1],position[x2][y2]))
+                                return true;
                         }
-                        else
-                        {
-                            if(yabs==1 && xabs == 1) //Moving forward diagonally 1. Can't move diagonally by more than 1.
-                            { //Should by your standard capture by 1 diagonally.
-                                if(validCapture(position[x1][y1],position[x2][y2])) {
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                    else //No piece is in our way.
-                    {
-                        if(xabs!=0) //Can't move laterally as a pawn for no reason.
-                            return false;
-                        if(yabs>=1)
-                        {
-                            if(y1==6 && yabs <=2) {
-                                if(validCapture(position[x1][y1],position[x2][y2]))
-                                {
-                                        return true;
-                                }
-                            }
-                            else if(yabs==1) {
-                                if(validCapture(position[x1][y1], position[x2][y2]))
-                                {
-                                        return true;
-                                }
-                            }
-                        }
-                        else
-                            return false;
                     }
                 }
                 break;
@@ -510,7 +490,16 @@ public class GameRoom {
                 //Knight movement is restricted to 2x1
                 if((xabs==1 && yabs ==2) || (xabs==2 && yabs==1))
                 {
-                    return validCapture(position[x1][y1],position[x2][y2]);
+                    for(MovePacket movePacket : getKnightMoves(m.x1,m.y1,position))
+                    {
+                        if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                                movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                                movePacket.playerID == m.playerID)
+                        {
+                            if(validCapture(position[x1][y1],position[x2][y2]))
+                                return true;
+                        }
+                    }
                 }
                 return false;
             case 10: //White Bishop
@@ -526,52 +515,19 @@ public class GameRoom {
                 }
                 break;
             case 11: //White pawn - RANK 1
-                if(y2-y1>0) //Pawns can't move laterally, so it should never need >=
+                if(y2-y1>0) //Pawns can't move laterally, just efficiency check.
                 {
-                    //Check if there is a piece on x2 y2
-                    //If there is check if it is a diagonal capture, if not then return false
-                    if(position[x2][y2]!=12)
+                    for(MovePacket movePacket : getPawnMoves(m.x1,m.y1,position))
                     {
-                        //Check for diagonal
-                        if(xabs==0)
+                        if(movePacket.x1 == m.x1 && movePacket.y1 == m.y1 &&
+                                movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
+                                movePacket.playerID == m.playerID)
                         {
-                            //Not diagonal so we can't move forward.
-                            return false;
+                            if(validCapture(position[x1][y1],position[x2][y2]))
+                                return true;
                         }
-                        else
-                        {
-                            if(yabs==1 && xabs == 1) //Moving forward diagonally 1. Can't move diagonally by more than 1.
-                            { //Should by your standard capture by 1 diagonally.
-                                if(validCapture(position[x1][y1],position[x2][y2]))
-                                {
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                    else //No piece is in our way.
-                    {
-                        if(xabs!=0) //Can't move laterally as a pawn for no reason.
-                            return false;
-                        if(yabs>=1)
-                        {
-                            if(y1==1 && yabs <=2) {
-                                if(validCapture(position[x1][y1],position[x2][y2]))
-                                {
-                                    return true;
-                                }
-                            }
-                            else if(yabs==1) {
-                                if(validCapture(position[x1][y1], position[x2][y2])){
-                                    return true;
-                                }
-                            }
-                        }
-                        else
-                            return false;
                     }
                 }
-                break;
         }
 
         return false;
@@ -594,9 +550,6 @@ public class GameRoom {
         //Now we alter our little baby board
         copyboard[movePacket.x2][movePacket.y2]=copyboard[movePacket.x1][movePacket.y1];
         copyboard[movePacket.x1][movePacket.y1] = 12;
-
-        System.out.println(board.board[movePacket.x2][movePacket.y2]);
-        System.out.println(copyboard[movePacket.x2][movePacket.y2]);
 
         /* This should actually be pretty easy since we already have a method for checking if a move is valid
          * We can just go through each of the other colour's pieces and see if the move from point A to the Kinng is valid
@@ -1067,6 +1020,62 @@ public class GameRoom {
         /* Let's also make sure x & y are in bounds */
         if(!inBounds(x) || !inBounds(y))
             return null;
+
+        /* We know that the absolute value of x1-x2 & y1-y2 cannot be 0 or above 2.
+         * xabs and yabs also cannot be equal.
+         * We also know that those values must be a combination of 1 & 2
+         *
+         * Knights can have up to 8 valid moves at any given time.
+         * Instead of looping we're just going to be lazy since we know exactly where a knight COULD move.
+         *
+         * We just need to check x+1,(y-2 & y+2)
+         *
+         */
+
+        if(inBounds(x-2)){
+            if(inBounds(y-1))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,x-2,y-1,pid));
+            }
+            if(inBounds(y+1))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,x-2,y+1,pid));
+            }
+        }
+        if(inBounds(x-1))
+        {
+            if(inBounds(y-2))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,x-1,y-2,pid));
+
+            }
+            if(inBounds(y+2))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,x-1,y+2,pid));
+            }
+        }
+        if(inBounds(x+1))
+        {
+            if(inBounds(y-2))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,x+1,y-2,pid));
+            }
+            if(inBounds(y+2))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,x+1,y+2,pid));
+            }
+        }
+        if(inBounds(x+2))
+        {
+            if(inBounds(y-1))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,x+2,y-1,pid));
+            }
+            if(inBounds(y+1))
+            {
+                validMoves.add(new MovePacket(gameID,x,y,x+2,y+1,pid));
+            }
+        }
         return validMoves;
     }
     public Vector<MovePacket> getBishopMoves(int x, int y, int[][] position)
@@ -1173,6 +1182,78 @@ public class GameRoom {
         if(!inBounds(x) || !inBounds(y))
             return null;
         /* This is the only one where our colour matters for which direction we can travel */
+        /* What we know about pawn movements
+        * y1-y2 cannot be 0 since that would mean a lateral movement along the x axis alone.
+        * It can only move diagonally by 1 space if during a capture.
+        *
+        * */
+        //TODO code for en passant.
+        if(pid==blackID)
+        {
+            /* If black's pawn is still on the 6th rank, he can jump */
+            if(y==6)
+            {
+                if(position[x][y-2]==12)
+                    validMoves.add(new MovePacket(gameID,x,y,x,y-2,pid));
+            }
+            /* Move forward by 1 */
+            if(y>=1 && y<=7)
+            {
+                if(position[x][y-1]==12)
+                    validMoves.add(new MovePacket(gameID,x,y,x,y-1,pid));
+            }
+            /* Our diagonal movement can only be by an xabs & yabs of 1 if there is a piece in our way. */
+            if(inBounds(x-1) && inBounds(y-1))
+            {
+                if(position[x-1][y-1]!=12) {
+                    if (validCapture(5, position[x - 1][y - 1])) {
+                        validMoves.add(new MovePacket(gameID, x, y, x - 1, y - 1, pid));
+                    }
+                }
+            }
+            if(inBounds(x+1) && inBounds(y-1))
+            {
+                if(position[x+1][y-1]!=12) {
+                    if (validCapture(5, position[x + 1][y - 1])) {
+                        validMoves.add(new MovePacket(gameID, x, y, x + 1, y - 1, pid));
+                    }
+                }
+            }
+        }
+
+        else if(pid==whiteID)
+        {
+                /* If white's pawn is still on the 1st rank, he can jump */
+            if(y==1)
+            {
+                if(position[x][y+2]==12)
+                    validMoves.add(new MovePacket(gameID,x,y,x,y+2,pid));
+            }
+            /* Move forward by 1 */
+            if(y>=0 && y<7)
+            {
+                if(position[x][y+1]==12)
+                    validMoves.add(new MovePacket(gameID,x,y,x,y+1,pid));
+            }
+            /* Our diagonal movement can only be by an xabs & yabs of 1 if there is a piece in our way. */
+            if(inBounds(x+1) && inBounds(y+1))
+            {
+                if(position[x+1][y+1]!=12) {
+                    if (validCapture(11, position[x + 1][y + 1])) {
+                        validMoves.add(new MovePacket(gameID, x, y, x + 1, y + 1, pid));
+                    }
+                }
+            }
+            if(inBounds(x-1) && inBounds(y+1))
+            {
+                if(position[x-1][y+1]!=12) {
+                    if (validCapture(11, position[x - 1][y + 1])) {
+                        validMoves.add(new MovePacket(gameID, x, y, x - 1, y + 1, pid));
+                    }
+                }
+            }
+        }
+
         return validMoves;
     }
 
@@ -1186,27 +1267,27 @@ public class GameRoom {
             case 0: //Black king
                 return getKingMoves(x,y,position);
             case 1: //Black queen
-                break;
+                return getQueenMoves(x,y,position);
             case 2: //Black rook
-                break;
+                return getRookMoves(x,y,position);
             case 3: //Black knight
-                break;
+                return getKnightMoves(x,y,position);
             case 4: //Black bishop
-                break;
+                return getBishopMoves(x,y,position);
             case 5: //Black pawn
-                break;
+                return getPawnMoves(x,y,position);
             case 6: //White king
                 return getKingMoves(x,y,position);
             case 7: //White queen
-                break;
+                return getQueenMoves(x,y,position);
             case 8: //White rook
-                break;
+                return getRookMoves(x,y,position);
             case 9: //white knight
-                break;
+                return getKnightMoves(x,y,position);
             case 10: //White bishop
-                break;
+                return getBishopMoves(x,y,position);
             case 11: //White pawn
-                break;
+                return getPawnMoves(x,y,position);
             case 12: //It's a fucking blank space. It has no moves.
                 break;
         }
@@ -1214,8 +1295,7 @@ public class GameRoom {
     }
 
 
-    public boolean isCheckmate(int playerID, int[][] position)
-    {
+    public boolean isCheckmate(int playerID, int[][] position) {
         /* This is annoying to make efficient...
         * Do we have to check every single move from the player? To see if it gets them out of check? How the fuck do we do that.
         * - - I guess we can create a function to return valid moves? An array of move packets?
@@ -1224,8 +1304,7 @@ public class GameRoom {
         * */
 
         //Let's grab the player colour
-        if(playerID==whiteID)
-        {
+        if (playerID == whiteID) {
             //Checking for the other colour's IDs.
             /* White king ID == 6
              * Black king 0
@@ -1236,36 +1315,143 @@ public class GameRoom {
              * black pawn 5
              * */
 
-            for(int i=0; i<8; i++)
-            {
-                for(int j=0; j<8; j++)
-                {
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
                     // For each of the player's pieces, we need to evaluate if any of them can make a valid move to get out of check.
-                    switch (position[i][j])
-                    {
+                    switch (position[i][j]) {
+                        case 6:
+                            for (MovePacket move : getKingMoves(i, j, position)) {
+                                //Can our king make any moves to get it out of check?
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("King move to: " + move.x2 + " " + move.y2 + " saves!");
+                                    return false;
+                                }
+                            }
+                            break;
+                        case 7:
+                            for (MovePacket move : getQueenMoves(i, j, position)) {
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("Queen move to: " + move.x2 + " " + move.y2 + " saves!");
+                                    return false;
+                                }
+                            }
+                            break;
+                        case 8:
+                            for (MovePacket move : getRookMoves(i, j, position)) {
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("Rook move to: " + move.x2 + " " + move.y2 + " saves!");
+                                    return false;
+                                }
+                            }
+                            break;
+                        case 9:
+                            for (MovePacket move : getKnightMoves(i, j, position)) {
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("Knight move to: " + move.x2 + " " + move.y2 + " saves!");
+                                    return false;
+                                }
+                            }
+                            break;
+                        case 10:
+                            for (MovePacket move : getBishopMoves(i, j, position)) {
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("Bishop move to: " + move.x2 + " " + move.y2 + " saves!");
+                                    return false;
+                                }
+                            }
+                            break;
+                        case 11:
+                            for (MovePacket move : getPawnMoves(i, j, position)) {
+                                //Can our king make any moves to get it out of check?
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("Pawn move to: " + move.x2 + " " + move.y2 + " saves!");
+                                    return false;
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+
+        } else if (playerID == blackID) {
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    // For each of the player's pieces, we need to evaluate if any of them can make a valid move to get out of check.
+                    switch (position[i][j]) {
                         case 0:
+                            for (MovePacket move : getKingMoves(i, j, position)) {
+                                //Can our king make any moves to get it out of check?
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("King move to: " + move.x2 + " " + move.y2 + " saves!");
+
+                                    return false;
+                                }
+                            }
                             break;
                         case 1:
+                            for (MovePacket move : getQueenMoves(i, j, position)) {
+                                //Can our king make any moves to get it out of check?
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("Queen move to: " + move.x2 + " " + move.y2 + " saves!");
+
+                                    return false;
+                                }
+                            }
                             break;
                         case 2:
+                            for (MovePacket move : getRookMoves(i, j, position)) {
+                                //Can our king make any moves to get it out of check?
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("Rook move to: " + move.x2 + " " + move.y2 + " saves!");
+
+                                    return false;
+                                }
+                            }
                             break;
                         case 3:
+                            for (MovePacket move : getKnightMoves(i, j, position)) {
+                                //Can our king make any moves to get it out of check?
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("Knight move to: " + move.x2 + " " + move.y2 + " saves!");
+
+                                    return false;
+                                }
+                            }
                             break;
                         case 4:
+                            for (MovePacket move : getBishopMoves(i, j, position)) {
+                                //Can our king make any moves to get it out of check?
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("Bishop move to: " + move.x2 + " " + move.y2 + " saves!");
+
+                                    return false;
+                                }
+                            }
                             break;
                         case 5:
+                            for (MovePacket move : getPawnMoves(i, j, position)) {
+                                //Can our king make any moves to get it out of check?
+                                if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
+                                    System.out.println("Pawn move to: " + move.x2 + " " + move.y2 + " saves!");
+
+                                    return false;
+                                }
+                            }
                             break;
                     }
                 }
             }
 
         }
-        else if(playerID==blackID)
-        {
-
-
+        if (currentTurnID == player1.connection.getID()) {
+            player1.connection.sendTCP(new GameEndPacket(true, gameID, player2.connection.getID(), player2.nick, "Checkmate! You lose!"));
+            player2.connection.sendTCP(new GameEndPacket(true, gameID, player2.connection.getID(), player2.nick, "Checkmate! You win!"));
         }
-        return false;
+        if (currentTurnID == player2.connection.getID()) {
+            player2.connection.sendTCP(new GameEndPacket(true, gameID, player1.connection.getID(), player1.nick, "Checkmate! You lose!"));
+            player1.connection.sendTCP(new GameEndPacket(true, gameID, player1.connection.getID(), player1.nick, "Checkmate! You win!"));
+        }
+        return true;
     }
 
     /* We'll use this later to check if both players have enough material to go on - We can only continue if ONE player has enough to checkmate
@@ -1288,7 +1474,26 @@ public class GameRoom {
         return false;
     }
 
-
+    public void postMove(int turnID)
+    {
+        if(evaluateCheck(turnID,board.board))
+        {
+            System.out.println("Check?");
+            if(isCheckmate(turnID,board.board))
+            {
+                System.out.println("Is checkmate!");
+                //TODO send out a GameEnd packet with checkmate as the reason.
+                if(currentTurnID==player1.connection.getID()) {
+                    player1.connection.sendTCP(new GameEndPacket(true, gameID, player2.connection.getID(), player2.nick, "Checkmate! You lose!"));
+                    player2.connection.sendTCP(new GameEndPacket(true, gameID, player2.connection.getID(), player2.nick, "Checkmate! You win!"));
+                }
+                if(currentTurnID==player2.connection.getID()) {
+                    player2.connection.sendTCP(new GameEndPacket(true, gameID, player1.connection.getID(), player1.nick, "Checkmate! You lose!"));
+                    player1.connection.sendTCP(new GameEndPacket(true, gameID, player1.connection.getID(), player1.nick, "Checkmate! You win!"));
+                }
+            }
+        }
+    }
     public void tryMove(MovePacket m)
     {
 
@@ -1302,14 +1507,6 @@ public class GameRoom {
 
                         //TODO I think this is a good place to evaluate if the other player is now in check, if they are we can code for checkmate....not sure how yet.
                         /* Because updateBoard switches turn ID, we can just use it again */
-                        /*/if(evaluateCheck(m,currentTurnID,board.board))
-                        {
-                            if(isCheckmate(currentTurnID,board.board))
-                            {
-                                //TODO send out a GameEnd packet with checkmate as the reason.
-
-                            }
-                        }*/
                     }
                 }
         }
@@ -1327,6 +1524,8 @@ public class GameRoom {
         player2.connection.sendTCP(packet);
         if(turnshift)
             switchTurns();
+        postMove(currentTurnID);
+
     }
 
     //Only called if one of the players disconnect.
