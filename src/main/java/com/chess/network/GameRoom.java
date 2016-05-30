@@ -1522,6 +1522,18 @@ public class GameRoom {
 
     }
 
+    public void surrender(int id)
+    {
+        if(id==player1.connection.getID())
+        {
+            player2.connection.sendTCP(new GameEndPacket(true, gameID, player2.connection.getID(), player2.nick, "Opponent Surrendered!"));
+            player1.connection.sendTCP(new GameEndPacket(true, gameID, player2.connection.getID(), player2.nick, "You Surrendered."));
+        }
+        else {
+            player1.connection.sendTCP(new GameEndPacket(true, gameID, player1.connection.getID(), player1.nick, "Opponent Surrendered!"));
+            player2.connection.sendTCP(new GameEndPacket(true, gameID, player1.connection.getID(), player1.nick, "You Surrendered."));
+        }
+    }
     //Only called if one of the players disconnect.
     public void disconnected(int id)
     {

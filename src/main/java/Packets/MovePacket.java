@@ -31,4 +31,8 @@ public class MovePacket {
     public int x2, y2;
     public int gameID;
     public boolean turnswitch=true; //Wow, I fucking thought ahead.
+    @Override
+    public String toString() {
+        return "("+x1+","+y1+") to ("+x2+","+y2+")";
+    }
 }

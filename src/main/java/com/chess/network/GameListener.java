@@ -2,6 +2,7 @@ package com.chess.network;
 
 import Packets.MovePacket;
 import Packets.PromotionPacket;
+import Packets.SurrenderPacket;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 /**
@@ -30,6 +31,14 @@ public class GameListener extends Listener{
             if(this.gameRoom.gameID==packet.gameID)
             {
                 gameRoom.tryPromotion(packet);
+            }
+        }
+        else if(object instanceof SurrenderPacket)
+        {
+            SurrenderPacket packet = (SurrenderPacket)object;
+            if(this.gameRoom.gameID==packet.gameID)
+            {
+                this.gameRoom.surrender(packet.playerID);
             }
         }
     }
