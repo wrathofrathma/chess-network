@@ -1323,7 +1323,6 @@ public class GameRoom {
                             for (MovePacket move : getKingMoves(i, j, position)) {
                                 //Can our king make any moves to get it out of check?
                                 if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
-                                    System.out.println("King move to: " + move.x2 + " " + move.y2 + " saves!");
                                     return false;
                                 }
                             }
@@ -1331,7 +1330,6 @@ public class GameRoom {
                         case 7:
                             for (MovePacket move : getQueenMoves(i, j, position)) {
                                 if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
-                                    System.out.println("Queen move to: " + move.x2 + " " + move.y2 + " saves!");
                                     return false;
                                 }
                             }
@@ -1339,7 +1337,6 @@ public class GameRoom {
                         case 8:
                             for (MovePacket move : getRookMoves(i, j, position)) {
                                 if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
-                                    System.out.println("Rook move to: " + move.x2 + " " + move.y2 + " saves!");
                                     return false;
                                 }
                             }
@@ -1347,7 +1344,6 @@ public class GameRoom {
                         case 9:
                             for (MovePacket move : getKnightMoves(i, j, position)) {
                                 if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
-                                    System.out.println("Knight move to: " + move.x2 + " " + move.y2 + " saves!");
                                     return false;
                                 }
                             }
@@ -1355,7 +1351,6 @@ public class GameRoom {
                         case 10:
                             for (MovePacket move : getBishopMoves(i, j, position)) {
                                 if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
-                                    System.out.println("Bishop move to: " + move.x2 + " " + move.y2 + " saves!");
                                     return false;
                                 }
                             }
@@ -1364,7 +1359,6 @@ public class GameRoom {
                             for (MovePacket move : getPawnMoves(i, j, position)) {
                                 //Can our king make any moves to get it out of check?
                                 if (!evaluateCheck(move, playerID, position) && isValid(move, position)) {
-                                    System.out.println("Pawn move to: " + move.x2 + " " + move.y2 + " saves!");
                                     return false;
                                 }
                             }

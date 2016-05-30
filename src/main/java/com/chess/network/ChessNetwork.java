@@ -75,6 +75,7 @@ public class ChessNetwork {
         server.getKryo().register(ServerShutdownPacket.class);
         server.getKryo().register(PromotionPacket.class);
         server.getKryo().register(PromotionAccept.class);
+        server.getKryo().register(IdentPacket.class);
         server.addListener(new MasterListener(this));
 
 

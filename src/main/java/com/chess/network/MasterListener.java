@@ -61,6 +61,28 @@ public class MasterListener extends Listener {
             }
 
         }
+        else if(object instanceof IdentPacket)
+        {
+            IdentPacket packet = (IdentPacket) object;
+            boolean identFound = false;
+            for(Player player : chessNetwork.connectedPlayers)
+            {
+                //Can't have two players of the same name.
+                if(player.nick.equals(packet.username))
+                {
+                    identFound = true;
+                }
+            }
+            if(!identFound){
+            for(Player player : chessNetwork.connectedPlayers) {
+                if (connection.getID() == player.connection.getID()) {
+                    player.nick = packet.username;
+                    connection.sendTCP(new IdentPacket(true));
+                    chessNetwork.server.sendToAllTCP(new PlayerListPacket(chessNetwork.connectedPlayers));
+                }
+
+            }   }
+        }
         else if(object instanceof String)
         {
             String message = (String) object;
