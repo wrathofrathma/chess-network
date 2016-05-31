@@ -31,7 +31,7 @@ public class GameRoom {
     int currentTurnID;
     boolean multiBoard=false; //Quick hack to get this working again.
     boolean turnshift=true;
-
+    public boolean promotionLock=true;
     public GameRoom(Player p1, Player p2, ChessNetwork network)
     {
         if(p1==null || p2==null) {
@@ -114,6 +114,7 @@ public class GameRoom {
                 player2.connection.sendTCP(new PromotionAccept(true, gameID,0,packet.pawnx, packet.pawny,packet.newID));
                 switchTurns();
                 postMove(currentTurnID);
+                promotionLock=false;
                 turnshift=true;
             }
         }
@@ -127,7 +128,7 @@ public class GameRoom {
                 player2.connection.sendTCP(new PromotionAccept(true, gameID,0,packet.pawnx, packet.pawny,packet.newID));
                 switchTurns();
                 postMove(currentTurnID);
-
+                promotionLock=false;
                 turnshift=true;
             }
         }
@@ -326,7 +327,34 @@ public class GameRoom {
         if((board.board[m.x1][m.y1]==5 && m.y2==0) ||(board.board[m.x1][m.y1]==11 && m.y2==7)){
             turnshift=false;
             network.server.sendToTCP(m.playerID,new PromotionPacket(m.x2,m.y2,0,gameID,0));
+            promotionLock=true;
             return true;
+        }
+        return false;
+    }
+    public boolean promotionCheck()
+    {
+        int j=0;
+        for(int i=0; i<8; i++)
+        {
+            if(board.board[i][j]==5)
+            {
+                turnshift=false;
+                network.server.sendToTCP(blackID,new PromotionPacket(i,j,0,gameID,0));
+                promotionLock=true;
+                return true;
+            }
+        }
+        j=7;
+        for(int i=0; i<8; i++)
+        {
+            if(board.board[i][j]==11)
+            {
+                turnshift=false;
+                network.server.sendToTCP(whiteID,new PromotionPacket(i,j,0,gameID,0));
+                promotionLock=true;
+                return true;
+            }
         }
         return false;
     }

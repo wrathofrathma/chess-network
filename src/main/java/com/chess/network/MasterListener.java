@@ -207,6 +207,10 @@ public class MasterListener extends Listener {
                         if(room.board!=null)
                         {
                             chessNetwork.server.sendToTCP(connection.getID(),room.board);
+                            if(room.promotionLock)
+                            {
+                                room.promotionCheck();
+                            }
                         }
                         else
                             chessNetwork.server.sendToTCP(connection.getID(),new BoardPosition(room.gameID));
