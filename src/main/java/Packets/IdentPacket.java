@@ -1,19 +1,18 @@
 package Packets;
 
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+
 /**
  * This is sent to the server upon login.
  */
 public class IdentPacket {
-    public String username;
-    public String passwordHash;
+    public byte[] username;
     public boolean acceptBit;
     public IdentPacket(){}
-    public IdentPacket(String username, String passwordHash)
-    {
-        this.username = username;
-        this.passwordHash = passwordHash;
-    }
-    public IdentPacket(String username)
+
+    public IdentPacket(byte[] username)
     {
         this.username = username;
     }
@@ -21,4 +20,5 @@ public class IdentPacket {
     {
         this.acceptBit = acceptBit;
     }
+
 }

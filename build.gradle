@@ -21,10 +21,14 @@ repositories {
     mavenCentral()
     maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
     maven { url "https://oss.sonatype.org/content/repositories/releases/" }
-    
+
+    maven { url "https://jitpack.io" }
+
+
 }
 dependencies {
     compile "com.esotericsoftware:kryonet:2.+"
+    compile "com.github.wrathofrathma:kryo-serialisers:1.02"
 }
 
 sourceSets.main.java.srcDirs = ["src/main/java/"]

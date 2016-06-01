@@ -4,6 +4,9 @@ import Packets.*;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 
+import javax.crypto.SecretKey;
+import java.io.UnsupportedEncodingException;
+import java.security.PublicKey;
 import java.util.Random;
 import java.util.Vector;
 
@@ -61,14 +64,55 @@ public class MasterListener extends Listener {
             }
 
         }
+        else if(object instanceof PublicKeyPacket)
+        {
+            PublicKeyPacket packet = (PublicKeyPacket)object;
+
+            for(Player player : chessNetwork.connectedPlayers)
+            {
+                if(connection.getID() == player.connection.getID())
+                {
+                    if(player.key==null) {
+                    /* Generate a secret key for this fellow and store it */
+                        SecretKey secretKey = chessNetwork.keyModule.generateSecretKey();
+                        System.out.println("Generated a secret key for player: " + secretKey.hashCode());
+                        player.key = secretKey;
+                        PublicKey userPublic = chessNetwork.keyModule.unwrapPublicKey(packet.key);
+                        byte[] encryptedSecret = chessNetwork.keyModule.wrapSecretKey(secretKey, userPublic);
+                        connection.sendTCP(new SecretKeyPacket(encryptedSecret));
+                    }
+                }
+            }
+        }
         else if(object instanceof IdentPacket)
         {
             IdentPacket packet = (IdentPacket) object;
+            String username=null;
+            /* First thing is first, we need to decrypt the packet */
+            for(Player player : chessNetwork.connectedPlayers)
+            {
+                if(connection.getID()==player.connection.getID())
+                {
+                    /* We need to decrypt everything here */
+                    if(player.key==null)
+                        System.err.println("Uh, this player's key is null");
+
+                    byte[] name = chessNetwork.keyModule.decrypt(packet.username,player.key);
+                    try {
+                        username = new String(name,"utf-8");
+                    } catch(UnsupportedEncodingException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
             boolean identFound = false;
+
             for(Player player : chessNetwork.connectedPlayers)
             {
                 //Can't have two players of the same name.
-                if(player.nick.equals(packet.username))
+                if(player.nick.equals(username))
                 {
                     identFound = true;
                 }
@@ -76,7 +120,7 @@ public class MasterListener extends Listener {
             if(!identFound){
             for(Player player : chessNetwork.connectedPlayers) {
                 if (connection.getID() == player.connection.getID()) {
-                    player.nick = packet.username;
+                    player.nick = username;
                     connection.sendTCP(new IdentPacket(true));
                     chessNetwork.server.sendToAllTCP(new PlayerListPacket(chessNetwork.connectedPlayers));
                 }

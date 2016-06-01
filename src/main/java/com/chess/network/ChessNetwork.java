@@ -2,8 +2,15 @@ package com.chess.network;
 
 import Packets.*;
 import com.esotericsoftware.kryonet.Server;
+import com.esotericsoftware.kryo.serializers.FieldSerializer;
+import com.rathma.crypto.serialisers.AESSerialiser;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.util.Vector;
 
@@ -30,6 +37,7 @@ public class ChessNetwork {
     public Vector<Player> connectedPlayers;
     public Vector<Challenge> openChallenges;
 
+    public KeyModule keyModule;
 
     public int checkPlayerExist(int id)
     {
@@ -43,6 +51,7 @@ public class ChessNetwork {
 
     public ChessNetwork()
     {
+        keyModule = new KeyModule();
         server = new Server();
         connectedPlayers = new Vector<Player>();
         openChallenges = new Vector<Challenge>();
@@ -58,7 +67,6 @@ public class ChessNetwork {
             e.printStackTrace();
             System.exit(1);
         }
-        server.getKryo().register(MessagePacket.class);
         server.getKryo().register(MovePacket.class);
         server.getKryo().register(RequestPacket.class);
         server.getKryo().register(PlayerListPacket.class);
@@ -75,9 +83,15 @@ public class ChessNetwork {
         server.getKryo().register(ServerShutdownPacket.class);
         server.getKryo().register(PromotionPacket.class);
         server.getKryo().register(PromotionAccept.class);
-        server.getKryo().register(IdentPacket.class);
         server.getKryo().register(SurrenderPacket.class);
+        server.getKryo().register(IdentPacket.class);
+        server.getKryo().register(MessagePacket.class);
+        server.getKryo().register(byte[].class);
+        server.getKryo().register(PublicKeyPacket.class);
+        server.getKryo().register(SecretKeyPacket.class);
+
         server.addListener(new MasterListener(this));
+
 
 
         if(!headless)
