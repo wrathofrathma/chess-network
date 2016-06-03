@@ -32,6 +32,10 @@ public class GameRoom {
     boolean multiBoard=false; //Quick hack to get this working again.
     boolean turnshift=true;
     public boolean promotionLock=true;
+
+    /* Our list of all previous moves */
+    Vector<Move> moves;
+
     public GameRoom(Player p1, Player p2, ChessNetwork network)
     {
         if(p1==null || p2==null) {
@@ -42,6 +46,7 @@ public class GameRoom {
         this.player1=p1;
         this.player2=p2;
        // this.board = new int[8][8];
+        moves = new Vector<Move>();
         Random random = new Random();
         //Assign player colours using a RNG library.
 
@@ -167,6 +172,7 @@ public class GameRoom {
          * 1. Grab all values between x1 -> x2
          * 2. Locked along the Y axis, check each value.
           * */
+
         if(x1==x2)
             return true;
         if(x1>x2)
@@ -393,8 +399,14 @@ public class GameRoom {
                             movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
                             movePacket.playerID == m.playerID)
                     {
-                        if(validCapture(position[x1][y1],position[x2][y2]))
-                            return true;
+                        if(validCapture(position[x1][y1],position[x2][y2])) {
+                            if(movePacket.specialID==1) {
+                                m.specialID=1;
+                                return true;
+                            }
+                            else
+                                return true;
+                        }
                     }
                 }
                 break;
@@ -477,8 +489,14 @@ public class GameRoom {
                             movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
                             movePacket.playerID == m.playerID)
                     {
-                        if(validCapture(position[x1][y1],position[x2][y2]))
-                            return true;
+                        if(validCapture(position[x1][y1],position[x2][y2])) {
+                            if(movePacket.specialID==1) {
+                                m.specialID=1;
+                                return true;
+                            }
+                            else
+                                return true;
+                        }
                     }
                 }
                 break;
@@ -491,8 +509,10 @@ public class GameRoom {
                             movePacket.x2 == m.x2 && movePacket.y2 == m.y2 &&
                             movePacket.playerID == m.playerID)
                     {
-                        if(validCapture(position[x1][y1],position[x2][y2]))
+                        if(validCapture(position[x1][y1],position[x2][y2])) {
+
                             return true;
+                        }
                     }
                 }
                 break;
@@ -880,7 +900,107 @@ public class GameRoom {
             }
         }
         //TODO add castling moves.
+        /* For each move, check if the rook has been moved and if the king has been moved */
+        boolean kingMoved=false, rook1Moved = false, rook2Moved=false;
+        if(pid==blackID)
+        {
+            /* Calculate for black
+             * Rook positions are 7,0 && 7,7
+             * King would move from 7,3 to either 7,1 or 7,5
+             * */
+            for(Move move : moves)
+            {
+                if(move.piece== Move.PIECE.KING)
+                {
+                    if(move.colour== Move.COLOUR.BLACK)
+                    {
+                        kingMoved=true;
+                    }
+                }
+                else if(move.piece== Move.PIECE.ROOK && move.colour== Move.COLOUR.BLACK)
+                {
+                    /* Calculate which rook moved */
+                    if(move.x1==0)
+                    {
+                        rook1Moved=true;
+                    }
+                    else if(move.x1==7)
+                    {
+                        rook2Moved=true;
+                    }
+                }
+            }
+            /* Add relevant moves to the list */
+            if(!kingMoved)
+            {
+                if(!rook1Moved)
+                {
+                    if(inBounds(x-2)) {
+                        if (validCapture(position[x][y], position[x - 2][y]) && isLateralXValid(x,0,7,position)) {
+                            validMoves.add(new MovePacket(gameID, x, y, x - 2, y, pid, 1));
+                        }
+                    }
+                }
+                if(!rook2Moved)
+                {
+                    if(inBounds(x+2))
+                        if(validCapture(position[x][y],position[x+2][y])&& isLateralXValid(x,7,7,position))
+                            validMoves.add(new MovePacket(gameID,x,y,x+2,y,pid,1));
+                }
+            }
+        }
+        else if(pid==whiteID)
+        {
+            /* Calculate for white
+             * Rook positions are 0,7 & 0,0
+             * King would move from 0,4 to 0,2 or 0,6 */
+            for(Move move : moves)
+            {
+                if(move.piece== Move.PIECE.KING)
+                {
+                    if(move.colour== Move.COLOUR.WHITE)
+                    {
+                        kingMoved=true;
+                    }
+                }
+                else if(move.piece== Move.PIECE.ROOK && move.colour== Move.COLOUR.WHITE)
+                {
+                    /* Calculate which rook moved */
+                    if(move.x1==0)
+                    {
+                        rook1Moved=true;
+                    }
+                    else if(move.x1==7)
+                    {
+                        rook2Moved=true;
+                    }
+                }
 
+            }
+            /* Add relevant moves to the list */
+            if(!kingMoved)
+            {
+
+                if(!rook1Moved)
+                {
+
+                    if(inBounds(x-2)) {
+                        if (validCapture(position[x][y], position[x - 2][y])&& isLateralXValid(x,0,0,position)) {
+                            validMoves.add(new MovePacket(gameID, x, y, x - 2, y, pid,1));
+                        }
+                    }
+                }
+                if(!rook2Moved)
+                {
+
+                    if(inBounds(x+2)) {
+                        if (validCapture(position[x][y], position[x + 2][y])&& isLateralXValid(x,7,0,position)) {
+                            validMoves.add(new MovePacket(gameID, x, y, x + 2, y, pid,1));
+                        }
+                    }
+                }
+            }
+        }
         return validMoves;
     }
     public Vector<MovePacket> getQueenMoves(int x, int y, int[][] position)
@@ -1518,7 +1638,7 @@ public class GameRoom {
     }
     public void tryMove(MovePacket m)
     {
-
+        System.out.println("Testing move");
         //How about we check the fucking game id....that's a good start @.o
         if(m.gameID==gameID) {
             if (currentTurnID == m.playerID)
@@ -1537,13 +1657,73 @@ public class GameRoom {
     //Going to have this be called by the listener
     public void updateBoard(MovePacket m)
     {
+        System.out.println("Updating!");
+        /* Add the move to the list */
+        Move move = new Move(m.x1, m.y1, m.x2, m.y2, board.board);
+        moves.add(move);
+
+        /* We need to check if this is a castling move */
+        if(m.specialID!=1) {
         /* Update board position */
-        board.board[m.x2][m.y2] = board.board[m.x1][m.y1]; //TODO code for captures. Should just overwrite currently clientside.
-        board.board[m.x1][m.y1] = 12; //Empty space now that it's empty.
+            board.board[m.x2][m.y2] = board.board[m.x1][m.y1];
+            board.board[m.x1][m.y1] = 12;
         /* Notify players of the move */
-        MovePacket packet = new MovePacket(gameID,board.boardID,m.x1, m.y1, m.x2, m.y2,true);
-        player1.connection.sendTCP(packet);
-        player2.connection.sendTCP(packet);
+            MovePacket packet = new MovePacket(gameID, board.boardID, m.x1, m.y1, m.x2, m.y2, true);
+            player1.connection.sendTCP(packet);
+            player2.connection.sendTCP(packet);
+        }
+        else{
+            /* Need to perform castle */
+            /* Update king position */
+            board.board[m.x2][m.y2] = board.board[m.x1][m.y1];
+            board.board[m.x1][m.y1] = 12;
+            /* Notify players of the king move */
+            MovePacket packet = new MovePacket(gameID, board.boardID, m.x1, m.y1, m.x2, m.y2, true);
+            player1.connection.sendTCP(packet);
+            player2.connection.sendTCP(packet);
+
+            MovePacket rookPacket=null;
+            /* Update rook position */
+            int rx1=0, rx2=0, ry=0;
+            if(m.playerID==whiteID)
+            {
+                ry=0;
+                if(m.x2==2){
+                    /* Rook on 0,0 move to 3,0*/
+                    rx1=0;
+                    rx2=3;
+                }
+                else if(m.x2==6)
+                {
+                    /* Rook on 7,0 move to 5,0 */
+                    rx1=7;
+                    rx2=5;
+                }
+            }
+            else if(m.playerID==blackID)
+            {
+                ry=7;
+                if(m.x2==2)
+                {
+                    /* Rook on  0,7 move to 3,7 */
+                    rx1=0;
+                    rx2=3;
+                }
+                else if(m.x2==6)
+                {
+                    /* Rook on 7,7 move to 5,7 */
+                    rx1=7;
+                    rx2=5;
+                }
+            }
+            //Second location is equal to the first location
+            board.board[rx2][ry]=board.board[rx1][ry];
+            board.board[rx1][ry]=12; //Empty space now
+            rookPacket = new MovePacket(gameID,board.boardID,rx1,ry,rx2,ry,true);
+            player1.connection.sendTCP(rookPacket);
+            player2.connection.sendTCP(rookPacket);
+
+        }
         if(turnshift)
             switchTurns();
         postMove(currentTurnID);

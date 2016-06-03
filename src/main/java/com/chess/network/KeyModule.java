@@ -23,14 +23,20 @@ public class KeyModule {
      * We are going to be using asymmetric encryption to exchange the secret key, so we will be going with RSA.
      * Not using diffie-hellman due to ignorance of how to protect it against a man in the middle attack, I think we'd need some sort of trusted cert.
      * */
+
+    /* Our encryption settings
+    * KeyPairAlgorithm defines our initial public/private key algorithm. This is only used to exchange on the public network.
+    * keyPairSize defines the size in bits of our key pair.
+    * SecretKeyAlgorithm defines the algorithm to be used to generate the secret key.
+    * EncryptionAlgorithm defines the algorithm used to encrypt and decrypt data with the secret key.
+    * encryptionKeySize defines the size in bits of our SecretKey
+    * */
     private static String keyPairAlgorithm = "RSA";
-    /* This will be our secret key algorithm. This can literally be anything, as long as the client/server are using the same thing. */
     private static String secretKeyAlgorithm = "AES";
+    private static String encryptionAlgorithm = "AES/ECB/PKCS5Padding";
+    private static int encryptionKeySize = 128;
+    private static int keyPairSize = 1024;
 
-    private static String encryptedAlgorithm = "AES/ECB/PKCS5Padding";
-
-
-    //Do we want to store you or initialise you every time?
     private static KeyPairGenerator keyPairGenerator;
 
     public KeyModule(){
@@ -40,7 +46,7 @@ public class KeyModule {
     public byte[] decrypt(byte[] encrypted, SecretKey key)
     {
         try {
-            Cipher cipher = Cipher.getInstance(encryptedAlgorithm);
+            Cipher cipher = Cipher.getInstance(encryptionAlgorithm);
             cipher.init(Cipher.DECRYPT_MODE,key);
             return cipher.doFinal(encrypted);
 
@@ -67,7 +73,7 @@ public class KeyModule {
     public byte[] encrypt(byte[] unencrypted, SecretKey key)
     {
         try {
-            Cipher cipher = Cipher.getInstance(encryptedAlgorithm);
+            Cipher cipher = Cipher.getInstance(encryptionAlgorithm);
             cipher.init(Cipher.ENCRYPT_MODE,key);
             return cipher.doFinal(unencrypted);
         } catch (NoSuchAlgorithmException e)
@@ -93,7 +99,7 @@ public class KeyModule {
     public KeyPair generateKeyPair(){
         try {
             keyPairGenerator = KeyPairGenerator.getInstance(keyPairAlgorithm);
-            keyPairGenerator.initialize(1024);
+            keyPairGenerator.initialize(keyPairSize);
             return keyPairGenerator.genKeyPair();
         } catch (NoSuchAlgorithmException e)
         {
@@ -178,7 +184,7 @@ public class KeyModule {
         KeyGenerator keyGenerator=null;
         try {
             keyGenerator = KeyGenerator.getInstance(secretKeyAlgorithm);
-            keyGenerator.init(256);
+            keyGenerator.init(encryptionKeySize);
         } catch (NoSuchAlgorithmException e)
         {
             e.printStackTrace();

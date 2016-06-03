@@ -6,6 +6,8 @@ import com.esotericsoftware.kryonet.Listener;
 
 import javax.crypto.SecretKey;
 import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.util.Random;
 import java.util.Vector;
@@ -88,6 +90,7 @@ public class MasterListener extends Listener {
         {
             IdentPacket packet = (IdentPacket) object;
             String username=null;
+            String password=null;
             /* First thing is first, we need to decrypt the packet */
             for(Player player : chessNetwork.connectedPlayers)
             {
@@ -96,10 +99,13 @@ public class MasterListener extends Listener {
                     /* We need to decrypt everything here */
                     if(player.key==null)
                         System.err.println("Uh, this player's key is null");
-
                     byte[] name = chessNetwork.keyModule.decrypt(packet.username,player.key);
+                    byte[] pass = chessNetwork.keyModule.decrypt(packet.password,player.key);
+                    System.out.println("Decrypted password: " + new String(pass));
                     try {
+                        password = new String(pass);
                         username = new String(name,"utf-8");
+
                     } catch(UnsupportedEncodingException e)
                     {
                         e.printStackTrace();
@@ -107,25 +113,53 @@ public class MasterListener extends Listener {
                 }
             }
 
-            boolean identFound = false;
-
-            for(Player player : chessNetwork.connectedPlayers)
+            /* Check if the player exists in the database */
+            User dbUser = chessNetwork.db.getUser(username.toLowerCase());
+            boolean loggedIn = false;
+            if(dbUser==null)
             {
-                //Can't have two players of the same name.
-                if(player.nick.equals(username))
+                System.out.println("dbUser returned null!");
+                /* User does not exist! */
+                if(chessNetwork.db.addUser(username.toLowerCase(),password))
                 {
-                    identFound = true;
+                    System.out.println("Added the user successfully!");
                 }
             }
-            if(!identFound){
-            for(Player player : chessNetwork.connectedPlayers) {
-                if (connection.getID() == player.connection.getID()) {
-                    player.nick = username;
-                    connection.sendTCP(new IdentPacket(true));
-                    chessNetwork.server.sendToAllTCP(new PlayerListPacket(chessNetwork.connectedPlayers));
-                }
+            else {
+                /* User does exist! Check the password */
+                if(dbUser.getPassword().equals(password))
+                {
+                    /* Check if the user is already logged in */
+                    for(Player player : chessNetwork.connectedPlayers)
+                    {
+                        if(player.user!=null) {
+                            if (player.user.getUsername().equals(username.toLowerCase())) {
+                                loggedIn = true;
+                                break;
+                            }
+                        }
+                    }
+                    if(!loggedIn)
+                    {
+                        // We should probably notify everyone they're online and update the player list.
+                        connection.sendTCP(new IdentPacket(true));
+                        /* Updating the specific connection details */
+                        for(Player player : chessNetwork.connectedPlayers)
+                        {
+                            if(connection.getID() == player.connection.getID())
+                            {
+                                player.nick = username;
+                                player.user = dbUser;
+                            }
+                        }
+                        chessNetwork.server.sendToAllTCP(new PlayerListPacket(chessNetwork.connectedPlayers));
+                    }
 
-            }   }
+                }
+                else{
+                    System.out.println("Passwords do not match!");
+                }
+            }
         }
         else if(object instanceof String)
         {

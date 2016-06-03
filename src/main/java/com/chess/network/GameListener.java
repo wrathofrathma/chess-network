@@ -26,7 +26,6 @@ public class GameListener extends Listener{
         }
         else if(object instanceof PromotionPacket)
         {
-            System.out.println("Received promotion packet o.O");
             PromotionPacket packet = (PromotionPacket)object;
             if(this.gameRoom.gameID==packet.gameID)
             {

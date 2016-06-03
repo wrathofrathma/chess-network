@@ -9,6 +9,7 @@ import javax.crypto.SecretKey;
  */
 public class IdentPacket {
     public byte[] username;
+    public byte[] password;
     public boolean acceptBit;
     public IdentPacket(){}
 
@@ -19,6 +20,11 @@ public class IdentPacket {
     public IdentPacket(boolean acceptBit)
     {
         this.acceptBit = acceptBit;
+    }
+    public IdentPacket(byte[] username, byte[] password)
+    {
+        this.username = username;
+        this.password = password;
     }
 
 }

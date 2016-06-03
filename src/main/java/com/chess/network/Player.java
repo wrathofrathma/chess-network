@@ -10,9 +10,12 @@ import javax.crypto.SecretKey;
  */
 public class Player{
     public Connection connection;
-    public String nick;
+    public User user=null;
     public boolean inGame=false;
+    //Session Key
     public SecretKey key;
+    //Temporary nickname, primarily used for guests.
+    public String nick;
     public Player(Connection connection)
     {
         this.connection = connection;

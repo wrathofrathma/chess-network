@@ -38,7 +38,7 @@ public class ChessNetwork {
     public Vector<Challenge> openChallenges;
 
     public KeyModule keyModule;
-
+    public Database db;
     public int checkPlayerExist(int id)
     {
         for(int i=0; i<connectedPlayers.size(); i++)
@@ -56,6 +56,7 @@ public class ChessNetwork {
         connectedPlayers = new Vector<Player>();
         openChallenges = new Vector<Challenge>();
         gameRooms = new Vector<GameRoom>();
+        db = new Database();
     }
 
     public void run()
